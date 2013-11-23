@@ -1,3 +1,9 @@
+
+export tripletPowder,
+        SOPolarizedOcupation,
+        SOPolarizedAmplitude,
+        thermalPolarization
+
 inv2sqrt2 = float32(1.0/(2*sqrt(2.)))
 
 function zeroFieldVectors(x::Real, y::Real, z::Real)
@@ -13,9 +19,14 @@ function zeroFieldVectors(x::Real, y::Real, z::Real)
     return iv*scale
 end
 
+function thermalPolarization(theta, phi)
+  # levels are -1, 0, 1
+  return [2.0, 1.0, 0.0]
+end
+
 function SOPolarizedAmplitude(Ax::Real, Ay::Real, Az::Real)
     iv = zeroFieldVectors(Ax, Ay, Az)
-    function rotatedPolarization(theta, phi)
+    function rotatedPolarization(theta::Real, phi::Real)
         rot = qRotation(theta, phi)
         rvec = abs(iv*rot)
         return rvec.*rvec
@@ -27,7 +38,7 @@ end
 SOPolarizedOcupation(px::Real, py::Real, pz::Real) = SOPolarizedAmplitude(sqrt(abs(px)), sqrt(abs(py)), sqrt(abs(pz)))
   
 
-function gauss!{T <: Real}(spect::Vector{T}, field::Vector{T}, scale::Real, eng::Real, width::Real = 0.002)
+function gauss!(spect::Vector{Float64}, field::Vector{Float64}, scale::Real, eng::Real, width::Real = 0.002)
     center = field-eng
     for i = 1:length(field)
       center = field[i]-eng
@@ -106,15 +117,15 @@ function scaledFieldHamiltonian(d::Real, e::Real, theta::Real, phi::Real)
     return H
 end
 
-function Powder{T <: Real}(d::Real, 
-                            e::Real, 
-                            field::Vector{T}, 
-                            B0::Real, 
+function twoPowder(d::Float64, 
+                            e::Float64, 
+                            field::Vector{Float64}, 
+                            B0::Float64, 
                             polarization::Function;
-                            steps::Integer = 75, 
-                            width::Real = 0.001)
-    T01 = zeros(Float32,length(field))
-    T_10 = zeros(Float32,length(field))
+                            steps::Int = 75, 
+                            width::Float64 = 0.001)
+    T01 = zeros(Float64,length(field))
+    T_10 = zeros(Float64,length(field))
     
     d = d/B0    # scale our D and E params so the forming the Hamiltonian is easy
     e = e/B0
@@ -122,7 +133,7 @@ function Powder{T <: Real}(d::Real,
     for theta in linspace(0, pi, steps)
         for phi in linspace(0, pi*2.0, steps)
             h = scaledFieldHamiltonian(d, e, theta, phi)  # Should the sign of RD should depend on if the units are in energy or Gauss?
-            en  = eigvals(h)                            # Right now I'm assuming Gauss
+            en = eigvals(h)            # Right now I'm assuming Gauss
             
             # Transition energies
             e1 = B0*(en[2] - en[1])  # -1 -> 0
@@ -130,28 +141,35 @@ function Powder{T <: Real}(d::Real,
             
             assert (e1 > 0 && e2 > 0)
             
-            p = polarization(theta, phi)            
+            p = polarization(theta, phi) 
             
             st = sin(theta)
             gauss!(T_10, field, st*(p[1]-p[2]), e1, width)
             gauss!(T01, field, st*(p[2]-p[3]), e2, width)
         end
     end
-       
     return T01, T_10
 end
 
-function RunSim{T <: Real}(B0::Real, 
+function tripletPowder{T <: Real}(B0::Real, 
                           field::Vector{T}, 
                           d::Real, 
                           e::Real, 
                           polarization::Function; 
-                          steps::Integer = 75, 
+                          steps::Int = 75, 
                           width::Real = 0.001)
-    spect1, spect2 = Powder(d, e, field, B0, polarization, steps = steps, width = width)
+
+    spect1, spect2 = twoPowder(float64(d), 
+                               float64(e), 
+                               convert(Vector{Float64},field), 
+                               float64(B0), 
+                               polarization, 
+                               steps = steps, 
+                               width = width)
+                               
     result = spect1 + spect2
     # Normalize
-    result = result/maximum(result)   
+    result = result/maximum(abs(result))   
     return result
 end
     

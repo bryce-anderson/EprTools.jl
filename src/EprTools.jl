@@ -14,7 +14,7 @@ module EprTools
   # Correction tools
   include(joinpath("utils","spectcorrections.jl"))
 
-  # Bruker file loading tool
+  # Bruker file loading tools
   include("eprloader.jl")
 
   # Spin operator tools

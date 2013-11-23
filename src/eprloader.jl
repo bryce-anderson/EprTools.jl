@@ -18,9 +18,10 @@ function eprload(filename::String)
     return loadBinary(s)
   end
   
-  x=linspace(keys["XMIN"],keys["XMIN"]+keys["XWID"],xlen)
+  x = linspace(keys["XMIN"],keys["XMIN"]+keys["XWID"], xlen)
+  
   if ylen != 0
-    y=linspace(keys["YMIN"],keys["XMIN"]+keys["YWID"],ylen)
+    y = linspace(keys["YMIN"],keys["YMIN"]+keys["YWID"], ylen)
   else y = Array(Float32,0)
   end
   
