@@ -1,10 +1,6 @@
-immutable type EprData
-  dims::Int
-  x::Array{Float32,1}
-  y::Array{Float32,1}
-  i::Array{Complex{Float64},2}
-  keys::Dict{String,Any}
-end
+# Methods for loading Bruker Binary Epr files
+
+export eprload
 
 function eprload(filename::String)
   descname = filename * ".DSC"
@@ -18,15 +14,13 @@ function eprload(filename::String)
   xlen = int(keys["XPTS"])
   ylen = haskey(keys,"YPTS") ? int(keys["YPTS"]) : 0
   
-  println("x, y: $xlen, $ylen")
-  
   i = open(binname) do s
     return loadBinary(s)
   end
   
   x=linspace(keys["XMIN"],keys["XMIN"]+keys["XWID"],xlen)
   if ylen != 0
-    y=linspace(keys["YMIN"],keys["XMIN"]+keys["YWID"],xlen)
+    y=linspace(keys["YMIN"],keys["XMIN"]+keys["YWID"],ylen)
   else y = Array(Float32,0)
   end
   
@@ -39,7 +33,7 @@ function eprload(filename::String)
     data = complex(d)
   end
   
-  EprData(ylen > 0 ? 1:2, x,y,data,keys)
+  EprData(ylen > 0 ? 1:2,x,y,data,keys)
 end
 
 function loadBinary(stream::IOStream)

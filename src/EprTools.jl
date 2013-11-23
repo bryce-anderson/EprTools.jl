@@ -2,8 +2,17 @@ require("Optim")
 
 module EprTools
 
+  # Standard types
+  include("types.jl")
+  
+  # Numeric utils tools
+  include(joinpath("utils","numericutils.jl"))
+
   # Conversion tools
-  include("utils/conversion.jl")
+  include(joinpath("utils","conversion.jl"))
+  
+  # Correction tools
+  include(joinpath("utils","spectcorrections.jl"))
 
   # Bruker file loading tool
   include("eprloader.jl")
