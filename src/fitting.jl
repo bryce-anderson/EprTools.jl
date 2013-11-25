@@ -26,35 +26,35 @@ function genPolarization(B0::Real,
   count = 0
                                           
   function f(p::Vector)
-    scale = p[1]
-    xyz = getXYZ(p[2:]...)
-    sim = scale*tripletPowder(B0, field, d, e, pgen(xyz...), steps = steps)
+    xyz = getXYZ(p...)
+    sim = tripletPowder(B0, field, d, e, pgen(xyz...), steps = steps)
     diff = spect - sim
-    squares =  diff'*diff
+    squares =  (diff'*diff)[1]   # Get it out of the 1x1 array
     if count % 10 == 0
       println("Iteration $count, Sum of squares: $squares")
     end
     count += 1
-    return squares[1]   # Get it out of the 1x1 array
+    return squares
   end
   
-  result = optimizer(f, append!([1.0], thetaphi))
-  result.minimum = append!([result.minimum[1]], getXYZ(result.minimum[2:]...))
+  result = optimizer(f, thetaphi)
+  result.minimum = getXYZ(result.minimum...)
   return result
 end
 
 ####################### Fitting methods ###########################
-function optimizePolarization(B0::Real, 
-                              field::Vector, 
-                              spect::Vector, 
-                              d::Real, 
-                              e::Real, 
-                              guess::Vector, 
+function optimizePolarization(B0::Real,
+                              field::Vector,
+                              spect::Vector,
+                              d::Real,
+                              e::Real,
+                              guess::Vector,
                               pgen::Function = SOPolarizedOcupation;
+                              method::Symbol = :nelder_mead,
                               steps::Int = 50)
                                           
-  
-  result = genPolarization(B0::Real,field,spect,d,e,guess,pgen,Optim.optimize, steps)
+  opt(f, guess) = Optim.optimize(f, guess, method = method)
+  result = genPolarization(B0::Real,field,spect,d,e,guess,pgen,opt,steps)
   println("Found result: $result")
   return result
 end
